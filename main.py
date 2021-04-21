@@ -76,9 +76,12 @@ def make_experiment():
     dataset = pandas.read_csv(r'bialaczka.csv', sep=",", header=None)
     dataset.columns = dataset_features
 
+    # X - set of features
     X = dataset.drop(columns=['Klasa', 'ID w klasie'])
+    # y - set of classes
     y = dataset['Klasa']
 
+    # tested classifiers
     clfs = {
         'k3euclidean': KNeighborsClassifier(n_neighbors=3, metric='euclidean'),
         'k5euclidean': KNeighborsClassifier(n_neighbors=5, metric='euclidean'),
@@ -88,7 +91,9 @@ def make_experiment():
         'k9manhattan': KNeighborsClassifier(n_neighbors=9, metric='manhattan')
     }
 
+    # number of splits in K-fold
     n_splits = 2
+    # number of repetitions in K-fold
     n_repeats = 5
     rkf = RepeatedKFold(n_splits=n_splits, n_repeats=n_repeats, random_state=42)
 
@@ -96,23 +101,31 @@ def make_experiment():
     number_of_folds = n_splits*n_repeats
     scores = numpy.zeros((len(clfs), number_of_features, number_of_folds))
 
+    # first we need to choose features to take into considerations
     for feature_index in range(0, number_of_features):
         features_counter = feature_index + 1
         selector = SelectKBest(score_func=chi2, k=features_counter)
         selected_data = selector.fit_transform(X, y)
         # print(selector.get_support(indices=True))
+ 
+        # then perform training and testing fold by fold for each classifier
         for fold, (train, test) in enumerate(rkf.split(selected_data, y)):
             for clf_idx, clf_name in enumerate(clfs):
                 X_train, X_test = selected_data[train], selected_data[test]
                 y_train, y_test = y[train], y[test]
+                # it is good habit to use clone here
                 clf = clone(clfs[clf_name])
+                # training part
                 clf.fit(X_train, y_train)
+                # prediction part
                 y_pred = clf.predict(X_test)
+                # calculating accuracy
                 scores[clf_idx, feature_index, fold] = accuracy_score(y_test, y_pred)
 
     #print(scores)
     numpy.save('scores', scores)
 
+    # calculate means and standard deviations for comparison
     means = numpy.mean(scores, axis=2)
     deviations = numpy.std(scores, axis=2)
 
@@ -153,10 +166,13 @@ def make_experiment():
     t_statistic = numpy.zeros((len(clfs), len(clfs)))
     p_value = numpy.zeros((len(clfs), len(clfs)))
 
+    # get t-statistics values
     for i in range(len(clfs)):
         for j in range(len(clfs)):
             t_statistic[i, j], p_value[i, j] = ttest_ind(scores_stat[i], scores_stat[j])
     
+
+    # print t-statistics and p-values in tables
     headers = [clf_name for clf_name in clfs.keys()]
     names_column = numpy.array([[clf_name] for clf_name in clfs.keys()])
     t_statistic_table = numpy.concatenate((names_column, t_statistic), axis=1)
@@ -165,16 +181,19 @@ def make_experiment():
     p_value_table = tabulate(p_value_table, headers, floatfmt=".2f")
     print("t-statistic:\n", t_statistic_table, "\n\np-value:\n", p_value_table)
 
+    # calculate the advantage from t-statistics (if t_statistic>0 print 1 else 0) and display in a table
     advantage = numpy.zeros((len(clfs), len(clfs)))
     advantage[t_statistic > 0] = 1
     advantage_table = tabulate(numpy.concatenate((names_column, advantage), axis=1), headers)
     print("\nAdvantage:\n", advantage_table)
 
+    # calculate significance (if p-value<alpha print 1 else 0) and display in the table
     significance = numpy.zeros((len(clfs), len(clfs)))
     significance[p_value <= alfa] = 1
     significance_table = tabulate(numpy.concatenate((names_column, significance), axis=1), headers)
     print("\nStatistical significance (alpha = 0.05):\n", significance_table)
 
+    # get final results
     stat_better = significance * advantage
     stat_better_table = tabulate(numpy.concatenate((names_column, stat_better), axis=1), headers)
     print("\nStatistically significantly better:\n", stat_better_table)
