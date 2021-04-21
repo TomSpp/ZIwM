@@ -120,7 +120,7 @@ def make_experiment():
         print(f"Classifier: {clf_name}")
         for feature_index in range(0, number_of_features):
             tmp_classifier_mean = means[clf_id, feature_index]
-            print("Number of features: %d, mean: %.3f, standard deviation: (%.2f)" % (feature_index + 1, tmp_classifier_mean, deviations[clf_id, feature_index]))
+            print("Number of features: %d, mean: %.3f, standard deviation: (%.3f)" % (feature_index + 1, tmp_classifier_mean, deviations[clf_id, feature_index]))
 
     best_mean = numpy.max(means)
     best_mean_clf_id = numpy.argmax(numpy.max(means, axis=1))
