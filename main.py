@@ -7,6 +7,7 @@ from sklearn.model_selection import RepeatedKFold
 from sklearn.base import clone
 from sklearn.metrics import accuracy_score
 from scipy.stats import ttest_ind
+from tabulate import tabulate
 
 dataset_features = [
     'Klasa',
@@ -142,9 +143,6 @@ def make_experiment():
         print(f"number of features:{best_feature_index+1} mean:{best_mean}")
     
     scores_stat = numpy.zeros((len(clfs), number_of_folds))
-    # for clf_id, clf_name in enumerate(clfs):
-    #     for fold in scores[clf_idx, best_feature_indeces[clf_id]]:
-    #         scores_stat[clf_id, fold] = scores[clf_idx, best_feature_indeces[clf_id], fold]
     for clf_id, clf_name in enumerate(clfs):
         scores_stat[clf_id] = scores[clf_id,best_feature_indeces[clf_id].astype(int)]
 
@@ -158,9 +156,29 @@ def make_experiment():
     for i in range(len(clfs)):
         for j in range(len(clfs)):
             t_statistic[i, j], p_value[i, j] = ttest_ind(scores_stat[i], scores_stat[j])
-    print("t-statistic:\n", t_statistic, "\np-value:\n", p_value)
+    #print("t-statistic:\n", t_statistic, "\np-value:\n", p_value)
     
+    headers = [clf_name for clf_name in clfs.keys()]
+    names_column = numpy.array([[clf_name] for clf_name in clfs.keys()])
+    t_statistic_table = numpy.concatenate((names_column, t_statistic), axis=1)
+    t_statistic_table = tabulate(t_statistic_table, headers, floatfmt=".2f")
+    p_value_table = numpy.concatenate((names_column, p_value), axis=1)
+    p_value_table = tabulate(p_value_table, headers, floatfmt=".2f")
+    print("t-statistic:\n", t_statistic_table, "\n\np-value:\n", p_value_table)
 
+    advantage = numpy.zeros((len(clfs), len(clfs)))
+    advantage[t_statistic > 0] = 1
+    advantage_table = tabulate(numpy.concatenate((names_column, advantage), axis=1), headers)
+    print("Advantage:\n", advantage_table)
+
+    significance = numpy.zeros((len(clfs), len(clfs)))
+    significance[p_value <= alfa] = 1
+    significance_table = tabulate(numpy.concatenate((names_column, significance), axis=1), headers)
+    print("Statistical significance (alpha = 0.05):\n", significance_table)
+
+    stat_better = significance * advantage
+    stat_better_table = tabulate(numpy.concatenate((names_column, stat_better), axis=1), headers)
+    print("Statistically significantly better:\n", stat_better_table)
 
 
 if __name__ == '__main__':
