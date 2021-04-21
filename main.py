@@ -6,6 +6,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import RepeatedKFold
 from sklearn.base import clone
 from sklearn.metrics import accuracy_score
+from scipy.stats import ttest_ind
 
 dataset_features = [
     'Klasa',
@@ -89,7 +90,8 @@ def make_experiment():
     rkf = RepeatedKFold(n_splits=n_splits, n_repeats=n_repeats, random_state=42)
 
     number_of_features = len(X.columns)
-    scores = numpy.zeros((len(clfs), number_of_features, n_splits*n_repeats))
+    number_of_folds = n_splits*n_repeats
+    scores = numpy.zeros((len(clfs), number_of_features, number_of_folds))
 
     for feature_index in range(0, number_of_features):
         features_counter = feature_index + 1
@@ -105,7 +107,7 @@ def make_experiment():
                 y_pred = clf.predict(X_test)
                 scores[clf_idx, feature_index, fold] = accuracy_score(y_test, y_pred)
 
-    # print(scores)
+    #print(scores)
     numpy.save('scores', scores)
 
     means = numpy.mean(scores, axis=2)
@@ -125,6 +127,40 @@ def make_experiment():
     print(
         f"\nBest result: {best_mean} with classifier {list(clfs.keys())[best_clf_id]} and feature_count equal "
         f"{best_feature_index + 1}")
+
+    # we need to pick best number of features from each classifier
+    best_feature_indeces = numpy.zeros(len(clfs))
+    # we pick best number of features by its mean
+    print("\nchosen best means:")
+    for clf_id, clf_name in enumerate(clfs):
+        # pick index of the highest mean within the classifier
+        best_feature_index = numpy.argmax(means[clf_id])
+        # pick highest mean within the classifier
+        best_mean = numpy.max(means[clf_id])
+        best_feature_indeces[clf_id] = best_feature_index
+        print(f"classifier:{clf_name}")
+        print(f"number of features:{best_feature_index+1} mean:{best_mean}")
+    
+    scores_stat = numpy.zeros((len(clfs), number_of_folds))
+    # for clf_id, clf_name in enumerate(clfs):
+    #     for fold in scores[clf_idx, best_feature_indeces[clf_id]]:
+    #         scores_stat[clf_id, fold] = scores[clf_idx, best_feature_indeces[clf_id], fold]
+    for clf_id, clf_name in enumerate(clfs):
+        scores_stat[clf_id] = scores[clf_id,best_feature_indeces[clf_id].astype(int)]
+
+    print("scores for statistics:")
+    print(scores_stat)
+    # now t-student statistic test
+    alfa = .05
+    t_statistic = numpy.zeros((len(clfs), len(clfs)))
+    p_value = numpy.zeros((len(clfs), len(clfs)))
+
+    for i in range(len(clfs)):
+        for j in range(len(clfs)):
+            t_statistic[i, j], p_value[i, j] = ttest_ind(scores_stat[i], scores_stat[j])
+    print("t-statistic:\n", t_statistic, "\np-value:\n", p_value)
+    
+
 
 
 if __name__ == '__main__':
