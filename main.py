@@ -139,7 +139,7 @@ def make_experiment():
     best_mean_clf_id = numpy.argmax(numpy.max(means, axis=1))
     best_mean_feature_index = numpy.argmax(numpy.max(means, axis=0))
 
-    print(f"\nBest result globally: {best_mean}, with classifier {list(clfs.keys())[best_clf_id]} and feature_count: {best_feature_index + 1}")
+    print(f"\nBest result globally: {best_mean}, with classifier {list(clfs.keys())[best_mean_clf_id]} and feature_count: {best_mean_feature_index + 1}")
 
     # we need to pick best number of features from each classifier
     best_feature_indeces = numpy.zeros(len(clfs))
