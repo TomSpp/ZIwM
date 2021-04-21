@@ -114,39 +114,38 @@ def make_experiment():
     numpy.save('scores', scores)
 
     means = numpy.mean(scores, axis=2)
-    stds = numpy.std(scores, axis=2)
+    deviations = numpy.std(scores, axis=2)
 
     for clf_id, clf_name in enumerate(clfs):
-        print(f"classifier: {clf_name}")
+        print(f"Classifier: {clf_name}")
         for feature_index in range(0, number_of_features):
-            current_classifier_mean = means[clf_id, feature_index]
-            print("number of features: %d, mean: %.3f, standard deviation: (%.2f)" % (
-            feature_index + 1, current_classifier_mean, stds[clf_id, feature_index]))
+            tmp_classifier_mean = means[clf_id, feature_index]
+            print("Number of features: %d, mean: %.3f, standard deviation: (%.2f)" % (feature_index + 1, tmp_classifier_mean, deviations[clf_id, feature_index]))
 
     best_mean = numpy.max(means)
-    best_clf_id = numpy.argmax(numpy.max(means, axis=1))
-    best_feature_index = numpy.argmax(numpy.max(means, axis=0))
+    best_mean_clf_id = numpy.argmax(numpy.max(means, axis=1))
+    best_mean_feature_index = numpy.argmax(numpy.max(means, axis=0))
 
-    print(f"\nBest result globally: {best_mean}, classifier {list(clfs.keys())[best_clf_id]} and feature_count: {best_feature_index + 1}")
+    print(f"\nBest result globally: {best_mean}, with classifier {list(clfs.keys())[best_clf_id]} and feature_count: {best_feature_index + 1}")
 
     # we need to pick best number of features from each classifier
     best_feature_indeces = numpy.zeros(len(clfs))
     # we pick best number of features by its mean
-    print("\nchosen best means:")
+    print("\nChosen best means:")
     for clf_id, clf_name in enumerate(clfs):
         # pick index of the highest mean within the classifier
         best_feature_index = numpy.argmax(means[clf_id])
         # pick highest mean within the classifier
         best_mean = numpy.max(means[clf_id])
         best_feature_indeces[clf_id] = best_feature_index
-        print("classifier: %s" % (clf_name))
-        print("number of features: %d mean: %.3f" % (best_feature_index + 1, best_mean))
+        print("Classifier: %s" % (clf_name))
+        print("Number of features: %d mean: %.3f" % (best_feature_index + 1, best_mean))
     
     scores_stat = numpy.zeros((len(clfs), number_of_folds))
     for clf_id, clf_name in enumerate(clfs):
         scores_stat[clf_id] = scores[clf_id,best_feature_indeces[clf_id].astype(int)]
 
-    print("scores for statistics:")
+    print("Scores for statistics:")
     print(scores_stat)
 
     # now t-student statistic test
