@@ -148,6 +148,7 @@ def make_experiment():
 
     print("scores for statistics:")
     print(scores_stat)
+    
     # now t-student statistic test
     alfa = .05
     t_statistic = numpy.zeros((len(clfs), len(clfs)))
@@ -156,7 +157,6 @@ def make_experiment():
     for i in range(len(clfs)):
         for j in range(len(clfs)):
             t_statistic[i, j], p_value[i, j] = ttest_ind(scores_stat[i], scores_stat[j])
-    #print("t-statistic:\n", t_statistic, "\np-value:\n", p_value)
     
     headers = [clf_name for clf_name in clfs.keys()]
     names_column = numpy.array([[clf_name] for clf_name in clfs.keys()])
@@ -169,16 +169,16 @@ def make_experiment():
     advantage = numpy.zeros((len(clfs), len(clfs)))
     advantage[t_statistic > 0] = 1
     advantage_table = tabulate(numpy.concatenate((names_column, advantage), axis=1), headers)
-    print("Advantage:\n", advantage_table)
+    print("\nAdvantage:\n", advantage_table)
 
     significance = numpy.zeros((len(clfs), len(clfs)))
     significance[p_value <= alfa] = 1
     significance_table = tabulate(numpy.concatenate((names_column, significance), axis=1), headers)
-    print("Statistical significance (alpha = 0.05):\n", significance_table)
+    print("\nStatistical significance (alpha = 0.05):\n", significance_table)
 
     stat_better = significance * advantage
     stat_better_table = tabulate(numpy.concatenate((names_column, stat_better), axis=1), headers)
-    print("Statistically significantly better:\n", stat_better_table)
+    print("\nStatistically significantly better:\n", stat_better_table)
 
 
 if __name__ == '__main__':
