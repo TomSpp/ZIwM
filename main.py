@@ -71,6 +71,8 @@ def generate_ranking():
 
 
 def make_experiment():
+    numpy.set_printoptions(precision=3)
+
     dataset = pandas.read_csv(r'bialaczka.csv', sep=",", header=None)
     dataset.columns = dataset_features
 
@@ -115,19 +117,17 @@ def make_experiment():
     stds = numpy.std(scores, axis=2)
 
     for clf_id, clf_name in enumerate(clfs):
-        print(f"classifier:{clf_name}")
+        print(f"classifier: {clf_name}")
         for feature_index in range(0, number_of_features):
             current_classifier_mean = means[clf_id, feature_index]
-            print("features: %d, mean: %.3f, std: (%.2f)" % (
+            print("number of features: %d, mean: %.3f, standard variation: (%.2f)" % (
             feature_index + 1, current_classifier_mean, stds[clf_id, feature_index]))
 
     best_mean = numpy.max(means)
     best_clf_id = numpy.argmax(numpy.max(means, axis=1))
     best_feature_index = numpy.argmax(numpy.max(means, axis=0))
 
-    print(
-        f"\nBest result: {best_mean} with classifier {list(clfs.keys())[best_clf_id]} and feature_count equal "
-        f"{best_feature_index + 1}")
+    print(f"\nBest result globally: {best_mean}, classifier {list(clfs.keys())[best_clf_id]} and feature_count: {best_feature_index + 1}")
 
     # we need to pick best number of features from each classifier
     best_feature_indeces = numpy.zeros(len(clfs))
@@ -139,8 +139,8 @@ def make_experiment():
         # pick highest mean within the classifier
         best_mean = numpy.max(means[clf_id])
         best_feature_indeces[clf_id] = best_feature_index
-        print(f"classifier:{clf_name}")
-        print(f"number of features:{best_feature_index+1} mean:{best_mean}")
+        print("classifier: %s" % (clf_name))
+        print("number of features: %d mean: %.3f" % (best_feature_index + 1, best_mean))
     
     scores_stat = numpy.zeros((len(clfs), number_of_folds))
     for clf_id, clf_name in enumerate(clfs):
@@ -148,7 +148,7 @@ def make_experiment():
 
     print("scores for statistics:")
     print(scores_stat)
-    
+
     # now t-student statistic test
     alfa = .05
     t_statistic = numpy.zeros((len(clfs), len(clfs)))
