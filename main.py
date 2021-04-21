@@ -5,7 +5,7 @@ from sklearn.feature_selection import SelectKBest, chi2
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import RepeatedKFold
 from sklearn.base import clone
-from sklearn.metrics import confusion_matrix, accuracy_score
+from sklearn.metrics import accuracy_score
 
 dataset_features = [
     'Klasa',
@@ -55,7 +55,6 @@ def generate_ranking():
     ]
 
     ranking.sort(reverse=False, key=lambda f: f[1])
-
     for i, feature in enumerate(ranking, 1):
         print(f"{i}. {feature[0]} {feature[1]}")
 
@@ -80,35 +79,52 @@ def make_experiment():
         'k3euclidean': KNeighborsClassifier(n_neighbors=3, metric='euclidean'),
         'k5euclidean': KNeighborsClassifier(n_neighbors=5, metric='euclidean'),
         'k9euclidean': KNeighborsClassifier(n_neighbors=9, metric='euclidean'),
-        'k3chebyshev': KNeighborsClassifier(n_neighbors=3, metric='chebyshev'),
-        'k5chebyshev': KNeighborsClassifier(n_neighbors=5, metric='chebyshev'),
-        'k9chebyshev': KNeighborsClassifier(n_neighbors=9, metric='chebyshev')
+        'k3manhattan': KNeighborsClassifier(n_neighbors=3, metric='manhattan'),
+        'k5manhattan': KNeighborsClassifier(n_neighbors=5, metric='manhattan'),
+        'k9manhattan': KNeighborsClassifier(n_neighbors=9, metric='manhattan')
     }
 
     n_splits = 2
     n_repeats = 5
     rkf = RepeatedKFold(n_splits=n_splits, n_repeats=n_repeats, random_state=42)
 
-    scores = numpy.zeros((len(clfs), len(X.columns), n_splits*n_repeats))
-    confusion_matrixes = numpy.zeros((len(clfs), len(X.columns)), dtype=numpy.ndarray)
+    number_of_features = len(X.columns)
+    scores = numpy.zeros((len(clfs), number_of_features, n_splits*n_repeats))
 
-    for feature_index in range(0, len(X.columns)):
+    for feature_index in range(0, number_of_features):
         features_counter = feature_index + 1
         selector = SelectKBest(score_func=chi2, k=features_counter)
         selected_data = selector.fit_transform(X, y)
+        # print(selector.get_support(indices=True))
         for fold, (train, test) in enumerate(rkf.split(selected_data, y)):
             for clf_idx, clf_name in enumerate(clfs):
                 X_train, X_test = selected_data[train], selected_data[test]
                 y_train, y_test = y[train], y[test]
                 clf = clone(clfs[clf_name])
                 clf.fit(X_train, y_train)
-                predicted = clf.predict(X_test)
-                scores[clf_idx, feature_index, fold] = accuracy_score(y_test, predicted)
-                confusion_matrixes[clf_idx, feature_index] += confusion_matrix(y_test, predicted)
+                y_pred = clf.predict(X_test)
+                scores[clf_idx, feature_index, fold] = accuracy_score(y_test, y_pred)
 
-    print(confusion_matrixes)
+    # print(scores)
     numpy.save('scores', scores)
-    numpy.save('confusion_matrixes', confusion_matrixes)
+
+    means = numpy.mean(scores, axis=2)
+    stds = numpy.std(scores, axis=2)
+
+    for clf_id, clf_name in enumerate(clfs):
+        print(f"classifier:{clf_name}")
+        for feature_index in range(0, number_of_features):
+            current_classifier_mean = means[clf_id, feature_index]
+            print("features: %d, mean: %.3f, std: (%.2f)" % (
+            feature_index + 1, current_classifier_mean, stds[clf_id, feature_index]))
+
+    best_mean = numpy.max(means)
+    best_clf_id = numpy.argmax(numpy.max(means, axis=1))
+    best_feature_index = numpy.argmax(numpy.max(means, axis=0))
+
+    print(
+        f"\nBest result: {best_mean} with classifier {list(clfs.keys())[best_clf_id]} and feature_count equal "
+        f"{best_feature_index + 1}")
 
 
 if __name__ == '__main__':
