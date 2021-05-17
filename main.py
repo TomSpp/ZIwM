@@ -106,7 +106,6 @@ def make_experiment():
         features_counter = feature_index + 1
         selector = SelectKBest(score_func=chi2, k=features_counter)
         selected_data = selector.fit_transform(X, y)
-        # print(selector.get_support(indices=True))
  
         # then perform training and testing fold by fold for each classifier
         for fold, (train, test) in enumerate(rkf.split(selected_data, y)):
