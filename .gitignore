@@ -1,3 +1,6 @@
 venv/
 .idea/
 ranking.eps
+all_classifiers.eps
+euclidean_plot.eps
+manhattan_plot.eps
