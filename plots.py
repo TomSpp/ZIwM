@@ -2,8 +2,8 @@ import numpy
 import numpy as np
 from sklearn.neighbors import KNeighborsClassifier
 import matplotlib.pyplot as plt
-import matplotlib.patches as patches
 import matplotlib.ticker as ticker
+from matplotlib.lines import Line2D
 
 dataset_features = [
     'Klasa',
@@ -44,78 +44,35 @@ scores = numpy.load('scores.npy')
 means = numpy.mean(scores, axis=2)
 means = (means*100)
 
-k3euclidean = patches.Patch(color='grey', label='euclidean, k=3')
-k5euclidean = patches.Patch(color='green', label='euclidean, k=5')
-k9euclidean = patches.Patch(color='red', label='euclidean, k=9')
-k3manhattan = patches.Patch(color='yellow', label='manhattan, k=3')
-k5manhattan = patches.Patch(color='blue', label='manhattan, k=5')
-k9manhattan = patches.Patch(color='pink', label='manhattan, k=9')
+k3euclidean = Line2D(feature_range, means[0], c='black', label='euclidean, k=3', linestyle='--')
+k5euclidean = Line2D(feature_range, means[1], c='blue', label='euclidean, k=5', linestyle='--')
+k9euclidean = Line2D(feature_range, means[2], c='red', label='euclidean, k=9', linestyle='--')
+k3manhattan = Line2D(feature_range, means[3], c='black', label='manhattan, k=3')
+k5manhattan = Line2D(feature_range, means[4], c='blue', label='manhattan, k=5')
+k9manhattan = Line2D(feature_range, means[5], c='red', label='manhattan, k=9')
 
 
-euclidean_classifiers = [clf for clf in clfs.items() if clf[1].metric == 'euclidean']
-manhattan_classifiers = [clf for clf in clfs.items() if clf[1].metric == 'manhattan']
+legend = [k3euclidean, k5euclidean, k9euclidean, k3manhattan, k5manhattan, k9manhattan]
 
+plt.figure(figsize=(6, 8))
+for clf_id, clf in enumerate(clfs):
+    plt.plot(feature_range, means[clf_id], color=legend[clf_id].get_color(), linestyle=legend[clf_id].get_linestyle())
 
-def draw_all():
-    legend = [k3euclidean, k5euclidean, k9euclidean, k3manhattan, k5manhattan, k9manhattan]
+plt.legend(handles=legend, loc=2)
 
-    plt.figure(figsize=(6, 8))
-    for clf_id, clf in enumerate(clfs):
-        plt.plot(feature_range, means[clf_id], legend[clf_id]._original_facecolor)
+axes = plt.gca()
+axes.set_xlim([1, 20])
+axes.set_ylim([1, 35])
+x_ticks = numpy.arange(1, 21, 1)
+y_tics = numpy.arange(5, 40, 5)
+plt.xticks(x_ticks)
+plt.yticks(y_tics)
+axes.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.0f%%'))
 
-    plt.legend(handles=legend, loc=2)
+plt.xlabel('Liczba cech', fontsize=12)
+plt.ylabel('Dokładność klasyfikacji', fontsize=12)
+plt.grid(axis='x')
+plt.grid(axis='y')
 
-    axes = plt.gca()
-    axes.set_xlim([1, 20])
-    axes.set_ylim([1, 35])
-    x_ticks = numpy.arange(1, 20, 1)
-    y_tics = numpy.arange(5, 40, 5)
-    plt.xticks(x_ticks)
-    plt.yticks(y_tics)
-    axes.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.0f%%'))
-
-    plt.xlabel('Liczba najlepszych cech', fontsize=16)
-    plt.ylabel('Dokładność klasyfikacji', fontsize=16)
-    plt.grid(axis='x')
-    plt.grid(axis='y')
-
-    plt.savefig(fname='all_classifiers.eps')
-    plt.show()
-
-
-def draw_metric(classifiers):
-    metric = classifiers[0][1].metric
-
-    grey = patches.Patch(color='grey', label=f'{metric}, k=3')
-    green = patches.Patch(color='green', label=f'{metric}, k=5')
-    red = patches.Patch(color='red', label=f'{metric}, k=9')
-    legend = [grey, green, red]
-
-    plt.figure(figsize=(6, 8))
-    for index, clf in enumerate(classifiers):
-        clf_id = list(clfs).index(clf[0])
-        plt.plot(feature_range, means[clf_id], legend[index]._original_facecolor)
-
-    plt.legend(handles=legend, loc=2)
-
-    axes = plt.gca()
-    axes.set_xlim([1, 20])
-    axes.set_ylim([1, 35])
-    x_ticks = numpy.arange(1, 20, 1)
-    y_tics = numpy.arange(5, 40, 5)
-    plt.xticks(x_ticks)
-    plt.yticks(y_tics)
-    axes.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.0f%%'))
-
-    plt.xlabel('Liczba najlepszych cech', fontsize=16)
-    plt.ylabel('Dokładność klasyfikacji', fontsize=16)
-    plt.grid(axis='x')
-    plt.grid(axis='y')
-
-    plt.savefig(fname=f'{metric}_plot.eps')
-    plt.show()
-
-
-# draw_all()
-# draw_metric(manhattan_classifiers)
-draw_metric(euclidean_classifiers)
+plt.savefig(fname='all_classifiers.eps')
+plt.show()
